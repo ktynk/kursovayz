@@ -1,0 +1,69 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <windows.h>
+
+
+#define PHONE_LEN 8
+#define DATE_LEN 11
+#define MARSHRUT_LEN 50
+
+
+struct polzovatel {
+    char nomerphone[PHONE_LEN];
+    char name[50];
+};
+
+struct polzovatel* POLZOVATELS;
+int polzovatel_count = 0;
+int polzovatel_capacity = 0;
+void add_polzovatel() {
+    // Если массив заполнен, увеличиваем ёмкость
+    if (polzovatel_count == polzovatel_capacity)
+    {
+        int newpolzovatel_capacity = (polzovatel_capacity == 0) ? 1 : polzovatel_capacity * 2;
+        struct polzovatel* temp = realloc(POLZOVATELS, newpolzovatel_capacity * sizeof(struct polzovatel));
+        if (temp == NULL) {
+            printf("Ошибка выделения памяти для отзывов!\n");
+            return;
+        }
+        POLZOVATELS = temp;
+        polzovatel_capacity = newpolzovatel_capacity;
+    }
+}
+
+
+
+
+struct otziv {
+    char marshrut[MARSHRUT_LEN];
+    char nomerphone[PHONE_LEN];   
+    char date[DATE_LEN];
+    int rating;                    
+};
+
+
+
+
+
+struct otziv* otzivy = NULL;
+int otziv_count = 0;
+int otziv_capacity = 0;
+
+
+void add_otziv()
+{
+    // Если массив заполнен, увеличиваем ёмкость
+    if (otziv_count == otziv_capacity)
+    {
+        int new_capacity = (otziv_capacity == 0) ? 1 : otziv_capacity * 2;
+        struct otziv* temp = realloc(otzivy, new_capacity * sizeof(struct otziv));
+        if (temp == NULL)
+        {
+            printf("Ошибка выделения памяти для отзывов!\n");
+            return;
+        }
+        otzivy = temp;
+        otziv_capacity = new_capacity;
+    }
+}
