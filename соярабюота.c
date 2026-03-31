@@ -204,14 +204,14 @@ void admin_menu()
         printf("----панель администратора----\n");
         printf("1. удалить пользователя\n");
         printf("2. Выйти в главное меню\n");
-        scanf("%d", &choice);
+        scanf("%d", &choice);v vm 
         switch (choice)
         {
         case 1:
         {
             char login[50];
             printf("логин пользователя для удаления: ");
-            scanf("%49s", login);
+            scanf("%s", login);
             if (strcmp(login, ADMIN_LOGIN) == 0)
             {
                 printf("нельзя удалить учётную запись главного администратора.\n");
