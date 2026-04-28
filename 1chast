@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <windows.h>
+
 
 #define MAX_ROUTES    10
 #define ROUTE_LEN     50
@@ -50,9 +50,9 @@ void add_route(void);
 
 void load_otziv_from_file(void);
 void save_otziv(void);
-static int append_otziv(const char* route, const char* author, const char* text,
+ int append_otziv(const char* route, const char* author, const char* text,
                         int comfort, const char* trip_date);
-static void delete_otziv_at(int index);
+ void delete_otziv_at(int index);
 
 void browse_routes_and_reviews(int as_admin);
 
@@ -179,7 +179,7 @@ void save_otziv(void)
     fclose(f);
 }
 
-static int append_otziv(const char* route, const char* author, const char* text,
+ int append_otziv(const char* route, const char* author, const char* text,
                         int comfort, const char* trip_date)
 {
     if (otziv_count == otziv_capacity)
@@ -208,7 +208,7 @@ static int append_otziv(const char* route, const char* author, const char* text,
     return 1;
 }
 
-static void delete_otziv_at(int index)
+ void delete_otziv_at(int index)
 {
     if (index < 0 || index >= otziv_count)
         return;
@@ -218,7 +218,7 @@ static void delete_otziv_at(int index)
     save_otziv();
 }
 
-static int find_route_index_in_list(const char* route_name)
+ int find_route_index_in_list(const char* route_name)
 {
     for (int i = 0; i < route_count; i++)
     {
@@ -228,7 +228,7 @@ static int find_route_index_in_list(const char* route_name)
     return -1;
 }
 
-static int find_nth_otziv_on_route(const char* route_name, int display_num, int* out_index)
+ int find_nth_otziv_on_route(const char* route_name, int display_num, int* out_index)
 {
     if (display_num < 1)
         return 0;
