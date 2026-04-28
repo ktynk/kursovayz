@@ -98,7 +98,7 @@ void add_route(void) {
 		return;
 	}
 	printf("Введите название маршрута (без пробелов): ");
-	scanf("%49s", ROUTES[route_count]);
+	scanf("%s", ROUTES[route_count]);
 	route_count++;
 	save_route();
 	printf("Маршрут добавлен.\n");
