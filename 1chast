@@ -1,8 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
-
+#include <windows.h>
 #define MAX_ROUTES    10
 #define ROUTE_LEN     50
 #define LOGIN_LEN     50
@@ -12,17 +11,16 @@
 #define ADMIN_LOGIN     "admin"
 #define ADMIN_PASSWORD  "admin123"
 
-const char* FILE_OTZIV  = "otziv.txt";
+const char* FILE_OTZIV  = "otziv.txt"; //работает только со созданными уже раней файлами!!
 const char* FILE_USERS  = "users.txt";
 const char* FILE_ROUTE  = "route.txt";
 
-typedef struct otziv
-{
-    char route[ROUTE_LEN];
-    char author[LOGIN_LEN];
-    char text[OTZIV_TEXT];
-    int comfort;
-    char trip_date[TRIP_DATE_LEN];
+typedef struct otziv {
+	char route[ROUTE_LEN];
+	char author[LOGIN_LEN];
+	char text[OTZIV_TEXT];
+	int comfort;
+	char trip_date[TRIP_DATE_LEN];
 } otziv;
 
 char ROUTES[MAX_ROUTES][ROUTE_LEN];
@@ -32,10 +30,9 @@ otziv* OTZIV = NULL;
 int otziv_count = 0;
 int otziv_capacity = 0;
 
-struct user
-{
-    char login[LOGIN_LEN];
-    char password[LOGIN_LEN];
+struct user {
+	char login[LOGIN_LEN];
+	char password[LOGIN_LEN];
 };
 
 struct user* USERS = NULL;
@@ -50,9 +47,9 @@ void add_route(void);
 
 void load_otziv_from_file(void);
 void save_otziv(void);
- int append_otziv(const char* route, const char* author, const char* text,
-                        int comfort, const char* trip_date);
- void delete_otziv_at(int index);
+int append_otziv(const char* route, const char* author, const char* text,
+                 int comfort, const char* trip_date);
+void delete_otziv_at(int index);
 
 void browse_routes_and_reviews(int as_admin);
 
@@ -65,566 +62,497 @@ void admin_menu(void);
 int delete_user_by_login(const char* login);
 int find_user_by_login(const char* login);
 
-int find_user_by_login(const char* login)
-{
-    for (int i = 0; i < user_count; i++)
-    {
-        if (strcmp(USERS[i].login, login) == 0)
-            return i;
-    }
-    return -1;
+int find_user_by_login(const char* login) {
+	for (int i = 0; i < user_count; i++) {
+		if (strcmp(USERS[i].login, login) == 0)
+			return i;
+	}
+	return -1;
 }
 
-void load_route_from_file(void)
-{
-    route_count = 0;
-    FILE* f = fopen(FILE_ROUTE, "r");
-    if (f == NULL)
-        return;
-    while (route_count < MAX_ROUTES
-           && fscanf(f, "%49s", ROUTES[route_count]) == 1)
-        route_count++;
-    fclose(f);
+void load_route_from_file(void) {
+	route_count = 0;
+	FILE* f = fopen(FILE_ROUTE, "r");
+	if (f == NULL)
+		return;
+	while (route_count < MAX_ROUTES
+	        && fscanf(f, "%49s", ROUTES[route_count]) == 1)
+		route_count++;
+	fclose(f);
 }
 
-void save_route(void)
-{
-    FILE* f = fopen(FILE_ROUTE, "w");
-    if (f == NULL)
-    {
-        printf("Не удалось сохранить файл маршрутов.\n");
-        return;
-    }
-    for (int i = 0; i < route_count; i++)
-        fprintf(f, "%s\n", ROUTES[i]);
-    fclose(f);
+void save_route(void) {
+	FILE* f = fopen(FILE_ROUTE, "w");
+	if (f == NULL) {
+		printf("Не удалось сохранить файл маршрутов.\n");
+		return;
+	}
+	for (int i = 0; i < route_count; i++)
+		fprintf(f, "%s\n", ROUTES[i]);
+	fclose(f);
 }
 
-void add_route(void)
-{
-    if (route_count >= MAX_ROUTES)
-    {
-        printf("Достигнут лимит маршрутов (%d).\n", MAX_ROUTES);
-        return;
-    }
-    printf("Введите название маршрута (без пробелов): ");
-    scanf("%49s", ROUTES[route_count]);
-    route_count++;
-    save_route();
-    printf("Маршрут добавлен.\n");
+void add_route(void) {
+	if (route_count >= MAX_ROUTES) {
+		printf("Достигнут лимит маршрутов (%d).\n", MAX_ROUTES);
+		return;
+	}
+	printf("Введите название маршрута (без пробелов): ");
+	scanf("%49s", ROUTES[route_count]);
+	route_count++;
+	save_route();
+	printf("Маршрут добавлен.\n");
 }
 
-void load_otziv_from_file(void)
-{
-    free(OTZIV);
-    OTZIV = NULL;
-    otziv_count = 0;
-    otziv_capacity = 0;
+void load_otziv_from_file(void) {
+	free(OTZIV);
+	OTZIV = NULL;
+	otziv_count = 0;
+	otziv_capacity = 0;
 
-    FILE* f = fopen(FILE_OTZIV, "r");
-    if (f == NULL)
-        return;
+	FILE* f = fopen(FILE_OTZIV, "r");
+	if (f == NULL)
+		return;
 
-    char line[ROUTE_LEN + LOGIN_LEN + OTZIV_TEXT + TRIP_DATE_LEN + 32];
-    char route[ROUTE_LEN];
-    char author[LOGIN_LEN];
-    char text[OTZIV_TEXT];
-    char date_buf[TRIP_DATE_LEN];
-    int comfort;
+	char line[ROUTE_LEN + LOGIN_LEN + OTZIV_TEXT + TRIP_DATE_LEN + 32];
+	char route[ROUTE_LEN];
+	char author[LOGIN_LEN];
+	char text[OTZIV_TEXT];
+	char date_buf[TRIP_DATE_LEN];
+	int comfort;
 
-    while (fgets(line, sizeof line, f) != NULL)
-    {
-        line[strcspn(line, "\r\n")] = '\0';
-        if (line[0] == '\0')
-            continue;
+	while (fgets(line, sizeof line, f) != NULL) {
+		line[strcspn(line, "\r\n")] = '\0';
+		if (line[0] == '\0')
+			continue;
 
-        int n = sscanf(line,
-                       "%49[^\t]\t%49[^\t]\t%279[^\t]\t%d\t%23[^\t\n]",
-                       route,
-                       author,
-                       text,
-                       &comfort,
-                       date_buf);
-        if (n == 5)
-        {
-            if (comfort < 0)
-                comfort = 0;
-            if (comfort > 5)
-                comfort = 5;
-            append_otziv(route, author, text, comfort, date_buf);
-            continue;
-        }
-        if (sscanf(line, "%49[^\t]\t%49[^\t]\t%279[^\n]", route, author, text) == 3)
-            append_otziv(route, author, text, 0, "не указана");
-    }
+		int n = sscanf(line,
+		               "%49[^\t]\t%49[^\t]\t%279[^\t]\t%d\t%23[^\t\n]",
+		               route,
+		               author,
+		               text,
+		               &comfort,
+		               date_buf);
+		if (n == 5) {
+			if (comfort < 0)
+				comfort = 0;
+			if (comfort > 5)
+				comfort = 5;
+			append_otziv(route, author, text, comfort, date_buf);
+			continue;
+		}
+		if (sscanf(line, "%49[^\t]\t%49[^\t]\t%279[^\n]", route, author, text) == 3)
+			append_otziv(route, author, text, 0, "не указана");
+	}
 
-    fclose(f);
+	fclose(f);
 }
 
-void save_otziv(void)
-{
-    FILE* f = fopen(FILE_OTZIV, "w");
-    if (f == NULL)
-    {
-        printf("Не удалось сохранить файл отзывов.\n");
-        return;
-    }
-    for (int i = 0; i < otziv_count; i++)
-        fprintf(f, "%s\t%s\t%s\t%d\t%s\n",
-                OTZIV[i].route,
-                OTZIV[i].author,
-                OTZIV[i].text,
-                OTZIV[i].comfort,
-                OTZIV[i].trip_date);
-    fclose(f);
+void save_otziv(void) {
+	FILE* f = fopen(FILE_OTZIV, "w");
+	if (f == NULL) {
+		printf("Не удалось сохранить файл отзывов.\n");
+		return;
+	}
+	for (int i = 0; i < otziv_count; i++)
+		fprintf(f, "%s\t%s\t%s\t%d\t%s\n",
+		        OTZIV[i].route,
+		        OTZIV[i].author,
+		        OTZIV[i].text,
+		        OTZIV[i].comfort,
+		        OTZIV[i].trip_date);
+	fclose(f);
 }
 
- int append_otziv(const char* route, const char* author, const char* text,
-                        int comfort, const char* trip_date)
-{
-    if (otziv_count == otziv_capacity)
-    {
-        int ncap = (otziv_capacity == 0) ? 8 : otziv_capacity * 2;
-        otziv* t = (otziv*)realloc(OTZIV, (size_t)ncap * sizeof(otziv));
-        if (t == NULL)
-            return 0;
-        OTZIV = t;
-        otziv_capacity = ncap;
-    }
-    strncpy(OTZIV[otziv_count].route, route, ROUTE_LEN - 1);
-    OTZIV[otziv_count].route[ROUTE_LEN - 1] = '\0';
-    strncpy(OTZIV[otziv_count].author, author, LOGIN_LEN - 1);
-    OTZIV[otziv_count].author[LOGIN_LEN - 1] = '\0';
-    strncpy(OTZIV[otziv_count].text, text, OTZIV_TEXT - 1);
-    OTZIV[otziv_count].text[OTZIV_TEXT - 1] = '\0';
-    if (comfort < 0)
-        comfort = 0;
-    if (comfort > 5)
-        comfort = 5;
-    OTZIV[otziv_count].comfort = comfort;
-    strncpy(OTZIV[otziv_count].trip_date, trip_date, TRIP_DATE_LEN - 1);
-    OTZIV[otziv_count].trip_date[TRIP_DATE_LEN - 1] = '\0';
-    otziv_count++;
-    return 1;
+int append_otziv(const char* route, const char* author, const char* text,
+                 int comfort, const char* trip_date) {
+	if (otziv_count == otziv_capacity) {
+		int ncap = (otziv_capacity == 0) ? 8 : otziv_capacity * 2;
+		otziv* t = (otziv*)realloc(OTZIV, (size_t)ncap * sizeof(otziv));
+		if (t == NULL)
+			return 0;
+		OTZIV = t;
+		otziv_capacity = ncap;
+	}
+	strncpy(OTZIV[otziv_count].route, route, ROUTE_LEN - 1);
+	OTZIV[otziv_count].route[ROUTE_LEN - 1] = '\0';
+	strncpy(OTZIV[otziv_count].author, author, LOGIN_LEN - 1);
+	OTZIV[otziv_count].author[LOGIN_LEN - 1] = '\0';
+	strncpy(OTZIV[otziv_count].text, text, OTZIV_TEXT - 1);
+	OTZIV[otziv_count].text[OTZIV_TEXT - 1] = '\0';
+	if (comfort < 0)
+		comfort = 0;
+	if (comfort > 5)
+		comfort = 5;
+	OTZIV[otziv_count].comfort = comfort;
+	strncpy(OTZIV[otziv_count].trip_date, trip_date, TRIP_DATE_LEN - 1);
+	OTZIV[otziv_count].trip_date[TRIP_DATE_LEN - 1] = '\0';
+	otziv_count++;
+	return 1;
 }
 
- void delete_otziv_at(int index)
-{
-    if (index < 0 || index >= otziv_count)
-        return;
-    for (int j = index; j < otziv_count - 1; j++)
-        OTZIV[j] = OTZIV[j + 1];
-    otziv_count--;
-    save_otziv();
+void delete_otziv_at(int index) {
+	if (index < 0 || index >= otziv_count)
+		return;
+	for (int j = index; j < otziv_count - 1; j++)
+		OTZIV[j] = OTZIV[j + 1];
+	otziv_count--;
+	save_otziv();
 }
 
- int find_route_index_in_list(const char* route_name)
-{
-    for (int i = 0; i < route_count; i++)
-    {
-        if (strcmp(ROUTES[i], route_name) == 0)
-            return i;
-    }
-    return -1;
+int find_route_index_in_list(const char* route_name) {
+	for (int i = 0; i < route_count; i++) {
+		if (strcmp(ROUTES[i], route_name) == 0)
+			return i;
+	}
+	return -1;
 }
 
- int find_nth_otziv_on_route(const char* route_name, int display_num, int* out_index)
-{
-    if (display_num < 1)
-        return 0;
-    int seen = 0;
-    for (int i = 0; i < otziv_count; i++)
-    {
-        if (strcmp(OTZIV[i].route, route_name) != 0)
-            continue;
-        seen++;
-        if (seen == display_num)
-        {
-            *out_index = i;
-            return 1;
-        }
-    }
-    return 0;
+int find_nth_otziv_on_route(const char* route_name, int display_num, int* out_index) {
+	if (display_num < 1)
+		return 0;
+	int seen = 0;
+	for (int i = 0; i < otziv_count; i++) {
+		if (strcmp(OTZIV[i].route, route_name) != 0)
+			continue;
+		seen++;
+		if (seen == display_num) {
+			*out_index = i;
+			return 1;
+		}
+	}
+	return 0;
 }
 
-void browse_routes_and_reviews(int as_admin)
-{
-    for (;;)
-    {
-        if (route_count == 0)
-        {
-            printf("Нет маршрутов.\n");
-            return;
-        }
+void browse_routes_and_reviews(int as_admin) {
+	for (;;) {
+		if (route_count == 0) {
+			printf("Нет маршрутов.\n");
+			return;
+		}
 
-        printf("Маршруты:\n");
-        for (int i = 0; i < route_count; i++)
-            printf("%d. %s\n", i + 1, ROUTES[i]);
-        printf("0 — назад\nНомер маршрута: ");
-        int r;
-        if (scanf("%d", &r) != 1)
-            return;
-        if (r == 0)
-            return;
-        if (r < 1 || r > route_count)
-        {
-            printf("Неверный номер.\n");
-            continue;
-        }
+		printf("Маршруты:\n");
+		for (int i = 0; i < route_count; i++)
+			printf("%d. %s\n", i + 1, ROUTES[i]);
+		printf("0 — назад\nНомер маршрута: ");
+		int r;
+		if (scanf("%d", &r) != 1)
+			return;
+		if (r == 0)
+			return;
+		if (r < 1 || r > route_count) {
+			printf("Неверный номер.\n");
+			continue;
+		}
 
-        const char* route_name = ROUTES[r - 1];
+		const char* route_name = ROUTES[r - 1];
 
-        for (;;)
-        {
-            printf("\nМаршрут: \"%s\"\nОтзывы пользователей:\n", route_name);
-            int num = 0;
-            for (int i = 0; i < otziv_count; i++)
-            {
-                if (strcmp(OTZIV[i].route, route_name) != 0)
-                    continue;
-                num++;
-                printf("%d. [%s] комфорт %d/5 | поездка: %s | %s\n",
-                       num,
-                       OTZIV[i].author,
-                       OTZIV[i].comfort,
-                       OTZIV[i].trip_date,
-                       OTZIV[i].text);
-            }
-            if (num == 0)
-                printf("(пока нет отзывов)\n");
+		for (;;) {
+			printf("\nМаршрут: \"%s\"\nОтзывы пользователей:\n", route_name);
+			int num = 0;
+			for (int i = 0; i < otziv_count; i++) {
+				if (strcmp(OTZIV[i].route, route_name) != 0)
+					continue;
+				num++;
+				printf("%d. [%s] комфорт %d/5 | поездка: %s | %s\n",
+				       num,
+				       OTZIV[i].author,
+				       OTZIV[i].comfort,
+				       OTZIV[i].trip_date,
+				       OTZIV[i].text);
+			}
+			if (num == 0)
+				printf("(пока нет отзывов)\n");
 
-            printf("\n0 — к списку маршрутов\n");
+			printf("\n0 — к списку маршрутов\n");
 
-            if (as_admin)
-            {
-                printf("Номер отзыва для удаления (любой; 0 — назад): ");
-                int k;
-                if (scanf("%d", &k) != 1)
-                    return;
-                if (k == 0)
-                    break;
-                int idx;
-                if (!find_nth_otziv_on_route(route_name, k, &idx))
-                {
-                    printf("Отзыв не найден.\n");
-                    continue;
-                }
-                delete_otziv_at(idx);
-                printf("Отзыв удалён.\n");
-            }
-            else
-            {
-                printf("1 — оставить отзыв\n");
-                printf("2 — удалить свой отзыв\n");
-                printf("Выбор: ");
-                int op;
-                if (scanf("%d", &op) != 1)
-                    return;
-                if (op == 0)
-                    break;
-                if (op == 1)
-                {
-                    if (find_route_index_in_list(route_name) < 0)
-                    {
-                        printf("Маршрут не найден.\n");
-                        continue;
-                    }
-                    int comfort;
-                    char date_buf[TRIP_DATE_LEN];
-                    char buf[OTZIV_TEXT];
+			if (as_admin) {
+				printf("Номер отзыва для удаления (любой; 0 — назад): ");
+				int k;
+				if (scanf("%d", &k) != 1)
+					return;
+				if (k == 0)
+					break;
+				int idx;
+				if (!find_nth_otziv_on_route(route_name, k, &idx)) {
+					printf("Отзыв не найден.\n");
+					continue;
+				}
+				delete_otziv_at(idx);
+				printf("Отзыв удалён.\n");
+			} else {
+				printf("1 — оставить отзыв\n");
+				printf("2 — удалить свой отзыв\n");
+				printf("Выбор: ");
+				int op;
+				if (scanf("%d", &op) != 1)
+					return;
+				if (op == 0)
+					break;
+				if (op == 1) {
+					if (find_route_index_in_list(route_name) < 0) {
+						printf("Маршрут не найден.\n");
+						continue;
+					}
+					int comfort;
+					char date_buf[TRIP_DATE_LEN];
+					char buf[OTZIV_TEXT];
 
-                    printf("Уровень комфорта поездки (целое от 0 до 5): ");
-                    if (scanf("%d", &comfort) != 1)
-                        continue;
-                    if (comfort < 0 || comfort > 5)
-                    {
-                        printf("Нужно число от 0 до 5.\n");
-                        continue;
-                    }
+					printf("Уровень комфорта поездки (целое от 0 до 5): ");
+					if (scanf("%d", &comfort) != 1)
+						continue;
+					if (comfort < 0 || comfort > 5) {
+						printf("Нужно число от 0 до 5.\n");
+						continue;
+					}
 
-                    printf("Дата поездки (например 15.06.2024, без пробелов): ");
-                    if (scanf("%23s", date_buf) != 1)
-                        continue;
+					printf("Дата поездки (например 15.06.2024, без пробелов): ");
+					if (scanf("%23s", date_buf) != 1)
+						continue;
 
-                    printf("Текст отзыва (одна строка, без табуляции): ");
-                    if (scanf(" %279[^\n]", buf) != 1)
-                        continue;
+					printf("Текст отзыва (одна строка, без табуляции): ");
+					if (scanf(" %279[^\n]", buf) != 1)
+						continue;
 
-                    if (!append_otziv(route_name, CURRENT_USER, buf, comfort, date_buf))
-                    {
-                        printf("Не удалось сохранить.\n");
-                        continue;
-                    }
-                    save_otziv();
-                    printf("Отзыв добавлен.\n");
-                }
-                else if (op == 2)
-                {
-                    printf("Номер вашего отзыва на этом маршруте: ");
-                    int k;
-                    if (scanf("%d", &k) != 1)
-                        return;
-                    int idx;
-                    if (!find_nth_otziv_on_route(route_name, k, &idx))
-                    {
-                        printf("Отзыв не найден.\n");
-                        continue;
-                    }
-                    if (strcmp(OTZIV[idx].author, CURRENT_USER) != 0)
-                    {
-                        printf("Это не ваш отзыв.\n");
-                        continue;
-                    }
-                    delete_otziv_at(idx);
-                    printf("Отзыв удалён.\n");
-                }
-                else
-                    printf("Неверный выбор.\n");
-            }
-        }
-    }
+					if (!append_otziv(route_name, CURRENT_USER, buf, comfort, date_buf)) {
+						printf("Не удалось сохранить.\n");
+						continue;
+					}
+					save_otziv();
+					printf("Отзыв добавлен.\n");
+				} else if (op == 2) {
+					printf("Номер вашего отзыва на этом маршруте: ");
+					int k;
+					if (scanf("%d", &k) != 1)
+						return;
+					int idx;
+					if (!find_nth_otziv_on_route(route_name, k, &idx)) {
+						printf("Отзыв не найден.\n");
+						continue;
+					}
+					if (strcmp(OTZIV[idx].author, CURRENT_USER) != 0) {
+						printf("Это не ваш отзыв.\n");
+						continue;
+					}
+					delete_otziv_at(idx);
+					printf("Отзыв удалён.\n");
+				} else
+					printf("Неверный выбор.\n");
+			}
+		}
+	}
 }
 
-void load_users_from_file(void)
-{
-    FILE* f = fopen(FILE_USERS, "r");
-    if (f == NULL)
-        return;
+void load_users_from_file(void) {
+	FILE* f = fopen(FILE_USERS, "r");
+	if (f == NULL)
+		return;
 
-    char line[200];
-    while (fgets(line, sizeof line, f) != NULL)
-    {
-        char login[LOGIN_LEN], password[LOGIN_LEN];
-        if (sscanf(line, "%49s %49s", login, password) != 2)
-            continue;
-        if (strcmp(login, ADMIN_LOGIN) == 0)
-            continue;
-        if (find_user_by_login(login) != -1)
-            continue;
+	char line[200];
+	while (fgets(line, sizeof line, f) != NULL) {
+		char login[LOGIN_LEN], password[LOGIN_LEN];
+		if (sscanf(line, "%49s %49s", login, password) != 2)
+			continue;
+		if (strcmp(login, ADMIN_LOGIN) == 0)
+			continue;
+		if (find_user_by_login(login) != -1)
+			continue;
 
-        if (user_count == user_capacity)
-        {
-            int new_user_capacity = (user_capacity == 0) ? 1 : user_capacity * 2;
-            struct user* temp = realloc(USERS, (size_t)new_user_capacity * sizeof(struct user));
-            if (temp == NULL)
-            {
-                fclose(f);
-                return;
-            }
-            USERS = temp;
-            user_capacity = new_user_capacity;
-        }
-        strcpy(USERS[user_count].login, login);
-        strcpy(USERS[user_count].password, password);
-        user_count++;
-    }
-    fclose(f);
+		if (user_count == user_capacity) {
+			int new_user_capacity = (user_capacity == 0) ? 1 : user_capacity * 2;
+			struct user* temp = realloc(USERS, (size_t)new_user_capacity * sizeof(struct user));
+			if (temp == NULL) {
+				fclose(f);
+				return;
+			}
+			USERS = temp;
+			user_capacity = new_user_capacity;
+		}
+		strcpy(USERS[user_count].login, login);
+		strcpy(USERS[user_count].password, password);
+		user_count++;
+	}
+	fclose(f);
 }
 
-void save_users_to_file(void)
-{
-    FILE* f = fopen(FILE_USERS, "w");
-    if (f == NULL)
-    {
-        printf("Не удалось сохранить файл пользователей.\n");
-        return;
-    }
-    for (int i = 0; i < user_count; i++)
-        fprintf(f, "%s %s\n", USERS[i].login, USERS[i].password);
-    fclose(f);
+void save_users_to_file(void) {
+	FILE* f = fopen(FILE_USERS, "w");
+	if (f == NULL) {
+		printf("Не удалось сохранить файл пользователей.\n");
+		return;
+	}
+	for (int i = 0; i < user_count; i++)
+		fprintf(f, "%s %s\n", USERS[i].login, USERS[i].password);
+	fclose(f);
 }
 
-int main(void)
-{
-    load_users_from_file();
-    load_route_from_file();
-    load_otziv_from_file();
+int main(void) {
+	SetConsoleCP(1251);
+	SetConsoleOutputCP(1251);
+	int choice;
+	do {
+		printf("====меню====\n");
+		printf("1. создать аккаунт\n");
+		printf("2. войти в аккаунт\n");
+		printf("3. Выход\n");
+		scanf("%d", &choice);
+		switch (choice) {
+			case 1:
+				create_account();
+				break;
+			case 2:
+				user_vertification();
+				break;
+			case 3:
+				break;
+			default:
+				printf("Неверный выбор\n");
+		}
+	} while (choice != 3);
 
-    int choice;
-    do
-    {
-        printf("====меню====\n");
-        printf("1. создать аккаунт\n");
-        printf("2. войти в аккаунт\n");
-        printf("3. Выход\n");
-        scanf("%d", &choice);
-        switch (choice)
-        {
-        case 1: create_account(); break;
-        case 2: user_vertification(); break;
-        case 3: break;
-        default:
-            printf("Неверный выбор\n");
-        }
-    }
-    while (choice != 3);
-
-    save_users_to_file();
-    save_route();
-    save_otziv();
-    free(USERS);
-    free(OTZIV);
-    return 0;
+	save_users_to_file();
+	save_route();
+	save_otziv();
+	free(USERS);
+	free(OTZIV);
+	return 0;
 }
 
-void create_account(void)
-{
-    char login[LOGIN_LEN];
-    char password[LOGIN_LEN];
+void create_account(void) {
+	char login[LOGIN_LEN];
+	char password[LOGIN_LEN];
 
-    printf("введите логин: ");
-    scanf("%49s", login);
-    if (strcmp(login, ADMIN_LOGIN) == 0)
-    {
-        printf("Этот логин зарезервирован для главного администратора.\n");
-        return;
-    }
-    if (find_user_by_login(login) != -1)
-    {
-        printf("пользователь с таким логином существует.\n");
-        return;
-    }
+	printf("введите логин: ");
+	scanf("%49s", login);
+	if (strcmp(login, ADMIN_LOGIN) == 0) {
+		printf("Этот логин зарезервирован для главного администратора.\n");
+		return;
+	}
+	if (find_user_by_login(login) != -1) {
+		printf("пользователь с таким логином существует.\n");
+		return;
+	}
 
-    printf("введите пароль: ");
-    scanf("%49s", password);
+	printf("введите пароль: ");
+	scanf("%49s", password);
 
-    if (user_count == user_capacity)
-    {
-        int new_user_capacity = (user_capacity == 0) ? 1 : user_capacity * 2;
-        struct user* temp = realloc(USERS, (size_t)new_user_capacity * sizeof(struct user));
-        if (temp == NULL)
-        {
-            printf("error capacity\n");
-            return;
-        }
-        USERS = temp;
-        user_capacity = new_user_capacity;
-    }
-    strcpy(USERS[user_count].login, login);
-    strcpy(USERS[user_count].password, password);
-    user_count++;
-    save_users_to_file();
-    printf("Аккаунт создан.\n");
+	if (user_count == user_capacity) {
+		int new_user_capacity = (user_capacity == 0) ? 1 : user_capacity * 2;
+		struct user* temp = realloc(USERS, (size_t)new_user_capacity * sizeof(struct user));
+		if (temp == NULL) {
+			printf("error capacity\n");
+			return;
+		}
+		USERS = temp;
+		user_capacity = new_user_capacity;
+	}
+	strcpy(USERS[user_count].login, login);
+	strcpy(USERS[user_count].password, password);
+	user_count++;
+	save_users_to_file();
+	printf("Аккаунт создан.\n");
 }
 
-void user_vertification(void)
-{
-    char login[LOGIN_LEN];
-    char password[LOGIN_LEN];
+void user_vertification(void) {
+	char login[LOGIN_LEN];
+	char password[LOGIN_LEN];
 
-    printf("введите логин: ");
-    scanf("%49s", login);
-    printf("введите пароль: ");
-    scanf("%49s", password);
+	printf("введите логин: ");
+	scanf("%49s", login);
+	printf("введите пароль: ");
+	scanf("%49s", password);
 
-    if (strcmp(login, ADMIN_LOGIN) == 0 && strcmp(password, ADMIN_PASSWORD) == 0)
-    {
-        printf("Вход выполнен успешно. Режим главного администратора.\n");
-        admin_menu();
-        return;
-    }
+	if (strcmp(login, ADMIN_LOGIN) == 0 && strcmp(password, ADMIN_PASSWORD) == 0) {
+		printf("Вход выполнен успешно. Режим главного администратора.\n");
+		admin_menu();
+		return;
+	}
 
-    int idx = find_user_by_login(login);
-    if (idx == -1)
-    {
-        printf("Пользователь не найден.\n");
-        return;
-    }
-    if (strcmp(USERS[idx].password, password) == 0)
-    {
-        printf("Вход выполнен успешно.\n");
-        strncpy(CURRENT_USER, login, sizeof CURRENT_USER - 1);
-        CURRENT_USER[sizeof CURRENT_USER - 1] = '\0';
-        user_menu();
-        CURRENT_USER[0] = '\0';
-    }
-    else
-    {
-        printf("Неверный пароль.\n");
-    }
+	int idx = find_user_by_login(login);
+	if (idx == -1) {
+		printf("Пользователь не найден.\n");
+		return;
+	}
+	if (strcmp(USERS[idx].password, password) == 0) {
+		printf("Вход выполнен успешно.\n");
+		strncpy(CURRENT_USER, login, sizeof CURRENT_USER - 1);
+		CURRENT_USER[sizeof CURRENT_USER - 1] = '\0';
+		user_menu();
+		CURRENT_USER[0] = '\0';
+	} else {
+		printf("Неверный пароль.\n");
+	}
 }
 
-int delete_user_by_login(const char* login)
-{
-    int idx = find_user_by_login(login);
-    if (idx < 0)
-        return 0;
-    for (int i = idx; i < user_count - 1; i++)
-        USERS[i] = USERS[i + 1];
-    user_count--;
-    save_users_to_file();
+int delete_user_by_login(const char* login) {
+	int idx = find_user_by_login(login);
+	if (idx < 0)
+		return 0;
+	for (int i = idx; i < user_count - 1; i++)
+		USERS[i] = USERS[i + 1];
+	user_count--;
+	save_users_to_file();
 
-    for (int i = otziv_count - 1; i >= 0; i--)
-    {
-        if (strcmp(OTZIV[i].author, login) == 0)
-            delete_otziv_at(i);
-    }
-    return 1;
+	for (int i = otziv_count - 1; i >= 0; i--) {
+		if (strcmp(OTZIV[i].author, login) == 0)
+			delete_otziv_at(i);
+	}
+	return 1;
 }
 
-void admin_menu(void)
-{
-    int choice;
-    do
-    {
-        printf("----панель администратора----\n");
-        printf("1. удалить пользователя\n");
-        printf("2. Выйти в главное меню\n");
-        printf("3. добавить маршрут\n");
-        printf("4. маршруты и отзывы (просмотр, удалить любой отзыв)\n");
-        scanf("%d", &choice);
-        switch (choice)
-        {
-        case 1:
-        {
-            char login[LOGIN_LEN];
-            printf("логин пользователя для удаления: ");
-            scanf("%49s", login);
-            if (strcmp(login, ADMIN_LOGIN) == 0)
-            {
-                printf("нельзя удалить учётную запись главного администратора.\n");
-                break;
-            }
-            if (delete_user_by_login(login))
-                printf("Пользователь удалён.\n");
-            else
-                printf("Пользователь с таким логином не найден.\n");
-            break;
-        }
-        case 2:
-            break;
-        case 3:
-            add_route();
-            break;
-        case 4:
-            browse_routes_and_reviews(1);
-            break;
-        default:
-            printf("Неверный выбор\n");
-        }
-    }
-    while (choice != 2);
+void admin_menu(void) {
+	int choice;
+	do {
+		printf("----панель администратора----\n");
+		printf("1. удалить пользователя\n");
+		printf("2. Выйти в главное меню\n");
+		printf("3. добавить маршрут\n");
+		printf("4. маршруты и отзывы (просмотр, удалить любой отзыв)\n");
+		scanf("%d", &choice);
+		switch (choice) {
+			case 1: {
+				char login[LOGIN_LEN];
+				printf("логин пользователя для удаления: ");
+				scanf("%49s", login);
+				if (strcmp(login, ADMIN_LOGIN) == 0) {
+					printf("нельзя удалить учётную запись главного администратора.\n");
+					break;
+				}
+				if (delete_user_by_login(login))
+					printf("Пользователь удалён.\n");
+				else
+					printf("Пользователь с таким логином не найден.\n");
+				break;
+			}
+			case 2:
+				break;
+			case 3:
+				add_route();
+				break;
+			case 4:
+				browse_routes_and_reviews(1);
+				break;
+			default:
+				printf("Неверный выбор\n");
+		}
+	} while (choice != 2);
 }
 
-void user_menu(void)
-{
-    int choice;
-    do
-    {
-        printf("---- панель пользователя (%s) ----\n", CURRENT_USER);
-        printf("1. маршруты и отзывы (добавить / удалить свой отзыв)\n");
-        printf("2. выйти в главное меню\n");
-        scanf("%d", &choice);
-        switch (choice)
-        {
-        case 1:
-            browse_routes_and_reviews(0);
-            break;
-        case 2:
-            break;
-        default:
-            printf("Неверный выбор\n");
-        }
-    }
-    while (choice != 2);
+void user_menu(void) {
+	int choice;
+	do {
+		printf("---- панель пользователя (%s) ----\n", CURRENT_USER);
+		printf("1. маршруты и отзывы (добавить / удалить свой отзыв)\n");
+		printf("2. выйти в главное меню\n");
+		scanf("%d", &choice);
+		switch (choice) {
+			case 1:
+				browse_routes_and_reviews(0);
+				break;
+			case 2:
+				break;
+			default:
+				printf("Неверный выбор\n");
+		}
+	} while (choice != 2);
 }
