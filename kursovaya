@@ -51,7 +51,7 @@ void load_otziv_from_file(void);
 void save_otziv(void);
 int append_otziv(const char* route, const char* author, const char* text, int comfort, const char* trip_date);
 void delete_otziv_at(int index);
-
+void show_users_with_reviews(void);
 void browse_routes_and_reviews(int as_admin);
 void user_menu(void);
 void create_account(void);
@@ -66,6 +66,36 @@ int find_nth_otziv_on_route(const char* route_name, int display_num, int* out_in
 const char* find_route_with_most_reviews(void);
 
 // Реализация функций
+void show_users_with_reviews(void)
+{
+	int user_otziw_counts[user_count];
+	for(int i=0; i<user_count; i++)
+	{
+		user_otziw_counts[i] = 0;
+		
+	}
+	for (int i = 0; i < otziv_count; i++) {
+		// Ищем индекс 
+		int user_index = find_user_by_login(OTZIV[i].author);
+		        if (user_index != -1) {
+            user_otziw_counts[user_index]++; // Увеличиваем счётчик
+	    }  
+   }
+     // Печатаем пользователей с более чем одним отзывом
+    printf("Пользователи оставившие больше одного отзыва: \n");
+    int flag = 0;
+    for(int i=0; i <user_count;i++)
+    {
+    	if(user_otziw_counts[i]>1)
+    	{
+    		printf(" %s: %d отзывов(а)\n",USERS[i].login,user_otziw_counts[i]);
+    		flag =1;
+		}
+	}
+	if(flag!=1)
+	printf("нет пользователей у которых больше одного отзыва.");
+}   
+
 int find_user_by_login(const char* login) {
     for (int i = 0; i < user_count; i++) {
         if (strcmp(USERS[i].login, login) == 0)
@@ -227,7 +257,6 @@ int append_otziv(const char* route, const char* author, const char* text, int co
     otziv_count++;
     return 1;
 }
-
 void delete_otziv_at(int index) {
     if (index < 0 || index >= otziv_count)
         return;
@@ -236,7 +265,6 @@ void delete_otziv_at(int index) {
     otziv_count--;
     save_otziv();
 }
-
 void browse_routes_and_reviews(int as_admin) {
     for (;;) {
         if (route_count == 0) {
@@ -370,7 +398,6 @@ void browse_routes_and_reviews(int as_admin) {
         }
     }
 }
-
 void load_users_from_file(void) {
     FILE* f = fopen(FILE_USERS, "r");
     if (f == NULL)
@@ -411,7 +438,6 @@ void save_users_to_file(void) {
         fprintf(f, "%s %s\n", USERS[i].login, USERS[i].password);
     fclose(f);
 }
-
 void create_account(void) {
     char login[LOGIN_LEN];
     char password[LOGIN_LEN];
@@ -491,7 +517,6 @@ int delete_user_by_login(const char* login) {
     }
     return 1;
 }
-
 void admin_menu(void) {
     int choice;
     do {
@@ -501,6 +526,7 @@ void admin_menu(void) {
         printf("3. Добавить маршрут\n");
         printf("4. Маршруты и отзывы (просмотр, удалить любой отзыв)\n");
         printf("5. Показать маршрут с максимальным количеством отзывов\n");
+           printf("6. Показать активных пользователей\n");
         printf("Выбор: ");
         if (scanf("%d", &choice) != 1) {
             while (getchar() != '\n');
@@ -537,13 +563,15 @@ void admin_menu(void) {
                     printf("Нет отзывов или маршрутов.\n");
                 }
                 break;
+                 
             }
+             case 6:show_users_with_reviews();
+             break;
             default:
                 printf("Неверный выбор.\n");
         }
     } while (choice != 2);
 }
-
 void user_menu(void) {
     int choice;
     do {
@@ -551,6 +579,7 @@ void user_menu(void) {
         printf("1. Маршруты и отзывы (добавить / удалить свой отзыв)\n");
         printf("2. Выйти в главное меню\n");
         printf("3. Показать популярный маршрут\n");
+        printf("4. Показать самого активного пользователя\n");
         printf("Выбор: ");
         if (scanf("%d", &choice) != 1) {
             while (getchar() != '\n');
@@ -571,12 +600,12 @@ void user_menu(void) {
                 }
                 break;
             }
+             case 4:show_users_with_reviews();break;
             default:
                 printf("Неверный выбор.\n");
         }
     } while (choice != 2);
 }
-
 int main(void) {
     SetConsoleCP(1251);
     SetConsoleOutputCP(1251);
